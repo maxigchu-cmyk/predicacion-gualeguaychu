@@ -1,89 +1,58 @@
 import streamlit as st
+from streamlit_gsheets import GSheetsConnection
 import pandas as pd
 
-# CONFIGURACIÓN VISUAL
-st.set_page_config(page_title="Agenda Predicación", page_icon="📞", layout="centered")
+# CONFIGURACIÓN
+st.set_page_config(page_title="Predicación Sincronizada", layout="centered")
 
-st.markdown("""
-    <style>
-    .numero-grande { font-size: 70px !important; font-weight: bold; color: #1E3A8A; text-align: center; margin: 10px 0; }
-    .stButton>button { width: 100%; height: 75px; font-size: 24px !important; border-radius: 15px; margin-bottom: 10px; }
-    </style>
-    """, unsafe_allow_html=True)
+# Conexión con Google Sheets
+# Nota: La URL de la planilla se configura en los "Secrets" de Streamlit
+conn = st.connection("gsheets", type=GSheetsConnection)
 
-st.title("📞 Agenda de Predicación")
+# LEER DATOS
+df = conn.read(ttl="0") # ttl="0" para que siempre lea la versión más nueva
 
-# CARGA DE DATOS
-with st.sidebar:
-    st.header("📁 Base de Datos")
-    archivo = st.file_uploader("Sube el archivo de números (CSV)", type=["csv"])
-    
-    if archivo:
-        if 'db' not in st.session_state:
-            df = pd.read_csv(archivo)
-            if 'Estado' not in df.columns:
-                df['Estado'] = 'Disponible'
-            st.session_state.db = df
-            st.session_state.indice = 0
-            st.success("¡Base cargada!")
+# LÓGICA DE PERSISTENCIA
+# Buscamos el primer número que NO tenga estado 'Llamado' o 'Inexistente'
+# Agregamos una columna 'Llamado' en tu Excel si no existe
+if 'Llamado' not in df.columns:
+    df['Llamado'] = False
 
-if 'db' not in st.session_state:
-    st.info("Por favor, sube el archivo CSV en la barra lateral para comenzar.")
-    st.stop()
+# Filtramos los que faltan llamar y que existen
+df_pendientes = df[(df['Llamado'] == False) & (df['Estado'] != 'Inexistente')]
 
-# LÓGICA DE FILTRADO
-df_activos = st.session_state.db[st.session_state.db['Estado'] != 'Inexistente'].reset_index(drop=True)
-total = len(df_activos)
+st.title("📞 Agenda Compartida")
 
-# PROGRESO
-actual = st.session_state.indice + 1 if total > 0 else 0
-st.write(f"**Progreso:** {actual} de {total} números")
-st.progress(st.session_state.indice / total if total > 0 else 1.0)
+if not df_pendientes.empty:
+    # SIEMPRE mostramos el primero de la lista de pendientes
+    fila_actual = df_pendientes.iloc[0]
+    numero = str(fila_actual['Numeros'])
+    indice_original = df_pendientes.index[0]
 
-# INTERFAZ PRINCIPAL
-if st.session_state.indice < total:
-    fila = df_activos.iloc[st.session_state.indice]
-    num = str(fila['Numeros'])
-    
-    # Número Gigante
-    st.markdown(f'<div class="numero-grande"><a href="tel:{num}" style="text-decoration:none; color:#1E3A8A;">{num}</a></div>', unsafe_allow_html=True)
-    st.caption("👆 Toca el número para llamar")
+    st.markdown(f"<h1 style='text-align:center; font-size:70px;'>{numero}</h1>", unsafe_allow_html=True)
+    st.write(f"Progreso global: {len(df) - len(df_pendientes)} de {len(df)} números.")
 
-    # Botones de Navegación
-    c1, c2 = st.columns(2)
-    with c1:
-        if st.button("⬅️ Anterior"):
-            if st.session_state.indice > 0:
-                st.session_state.indice -= 1
-                st.rerun()
-    with c2:
-        if st.button("Siguiente ➡️"):
-            if st.session_state.indice < total - 1:
-                st.session_state.indice += 1
-                st.rerun()
+    col1, col2 = st.columns(2)
 
-    st.divider()
+    with col1:
+        if st.button("✅ Ya llamé (Pasar al siguiente)"):
+            # Actualizamos la planilla directamente
+            df.at[indice_original, 'Llamado'] = True
+            conn.update(data=df)
+            st.success("Progreso guardado para todos.")
+            st.rerun()
 
-    # Botones de Acción
-    if st.button("🚫 No existe / Fuera de servicio"):
-        idx_original = st.session_state.db[st.session_state.db['Numeros'] == int(num)].index
-        st.session_state.db.at[idx_original[0], 'Estado'] = 'Inexistente'
-        st.toast(f"Número {num} eliminado de la lista.")
-        st.rerun()
-
-    if st.button("⭐ Marcar como Revisita"):
-        idx_original = st.session_state.db[st.session_state.db['Numeros'] == int(num)].index
-        st.session_state.db.at[idx_original[0], 'Estado'] = 'Revisita'
-        st.toast("Guardado como revisita.")
-        st.rerun()
+    with col2:
+        if st.button("🚫 No existe"):
+            df.at[indice_original, 'Estado'] = 'Inexistente'
+            df.at[indice_original, 'Llamado'] = True
+            conn.update(data=df)
+            st.warning("Número marcado como inexistente globalmente.")
+            st.rerun()
 else:
-    st.success("¡Vuelta completa!")
-    if st.button("🔄 Reiniciar"):
-        st.session_state.indice = 0
+    st.balloons()
+    st.success("¡Increíble! Entre todos terminaron la lista.")
+    if st.button("🔄 Reiniciar lista para todos"):
+        df['Llamado'] = False
+        conn.update(data=df)
         st.rerun()
-
-# GUARDAR CAMBIOS
-with st.sidebar:
-    st.divider()
-    csv_final = st.session_state.db.to_csv(index=False).encode('utf-8')
-    st.download_button("📥 Descargar Avances", csv_final, "progreso.csv", "text/csv")
