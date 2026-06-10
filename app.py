@@ -15,17 +15,18 @@ st.markdown("""
 
 st.title("📞 Agenda Compartida")
 
-# CONEXIÓN NATIVA USANDO GOOGLE-AUTH DIRECTO
+# CONEXIÓN NATIVA CON PARCHE ANTIESPACIOS
 try:
-    # 1. Recuperamos los datos del Service Account desde tus Secrets de Streamlit
     sec = st.secrets["connections"]["gsheets"]["service_account"]
     
-    # 2. Armamos el diccionario limpio mapeando los datos del TOML
+    # Limpiamos la clave de cualquier barra de texto que haya quedado atrapada
+    pkey = sec["private_key"].replace("\\n", "\n").strip()
+    
     creds_dict = {
         "type": sec["type"],
         "project_id": sec["project_id"],
         "private_key_id": sec["private_key_id"],
-        "private_key": sec["private_key"],
+        "private_key": pkey,
         "client_email": sec["client_email"],
         "client_id": sec["client_id"],
         "auth_uri": sec["auth_uri"],
@@ -35,24 +36,18 @@ try:
         "universe_domain": sec.get("universe_domain", "googleapis.com")
     }
     
-    # 3. Definimos los alcances (scopes) oficiales que exige Google para leer y escribir
     scopes = [
         "https://www.googleapis.com/auth/spreadsheets",
         "https://www.googleapis.com/auth/drive"
     ]
     
-    # 4. Generamos las credenciales nativas con la librería oficial de Google
     credentials = Credentials.from_service_account_info(creds_dict, scopes=scopes)
-    
-    # 5. Conectamos gspread de forma directa
     gc = gspread.authorize(credentials)
     
-    # 6. Abrimos la planilla usando la URL de tus Secrets
     url_planilla = st.secrets["connections"]["gsheets"]["spreadsheet"]
     sh = gc.open_by_url(url_planilla)
     worksheet = sh.get_worksheet(0)
     
-    # 7. Descargamos los datos a un DataFrame
     data = worksheet.get_all_records()
     df = pd.DataFrame(data)
 
@@ -88,7 +83,6 @@ if not df_pendientes.empty:
     numero_actual = fila_actual['Numeros']
     estado_actual = fila_actual['Estado']
     
-    # Índice real de la fila en Google Sheets
     idx_original_gsheet = int(df_pendientes.index[0]) + 2
     
     if estado_actual == 'Revisita':
@@ -99,7 +93,7 @@ if not df_pendientes.empty:
 
     st.divider()
 
-    # BOTONES DE ACCIÓN DIRECTA (Modifican las celdas en tiempo real)
+    # BOTONES DE ACCIÓN DIRECTA
     if st.button("✅ Siguiente Número (Llamado Hecho)"):
         worksheet.update_cell(idx_original_gsheet, 3, "Sí")
         st.toast("Progreso guardado en la nube.")
