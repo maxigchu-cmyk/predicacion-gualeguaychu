@@ -1,5 +1,5 @@
 import streamlit as st
-from streamlit_gsheets import GSheetsConnection
+import gspread
 import pandas as pd
 
 # CONFIGURACIÓN VISUAL
@@ -14,24 +14,28 @@ st.markdown("""
 
 st.title("📞 Agenda Compartida")
 
-# CONEXIÓN CON GOOGLE SHEETS
-conn = st.connection("gsheets", type=GSheetsConnection)
-
-# LEER DATOS (Usamos el cliente nativo para tener control total de lectura/escritura)
-client = conn.client
-# Abrimos la planilla usando la URL limpia que configuraste en tus Secrets
-spreadsheet = client.open_by_url(st.secrets["connections"]["gsheets"]["spreadsheet"])
-# Seleccionamos la primera hoja (Hoja 1)
-worksheet = spreadsheet.get_worksheet(0)
-
-# Pasamos los datos a un DataFrame de Pandas para trabajarlo en la App
-data = worksheet.get_all_records()
-df = pd.DataFrame(data)
-
-# Si la planilla está totalmente vacía en las columnas de control, aseguramos que existan
-if 'Numeros' not in df.columns:
-    st.error("No se encontró la columna 'Numeros' en la planilla de Google Sheets.")
+# CONEXIÓN NATIVA CON GSPREAD USANDO TUS SECRETS
+try:
+    # Autenticación con las credenciales del robot que tenés en Secrets
+    credentials = st.secrets["connections"]["gsheets"]["service_account"]
+    gc = gspread.service_account_from_dict(credentials)
+    
+    # Abrimos la planilla por su URL limpia
+    url_planilla = st.secrets["connections"]["gsheets"]["spreadsheet"]
+    spreadsheet = gc.open_by_url(url_planilla)
+    worksheet = spreadsheet.get_worksheet(0) # Abre la primera hoja ("Hoja 1")
+except Exception as e:
+    st.error("Error al conectar con Google Sheets. Revisá tus Secrets.")
     st.stop()
+
+# LEER DATOS REALES
+data = worksheet.get_all_records()
+
+if not data:
+    st.warning("La planilla está vacía o no tiene el formato correcto (columnas: Numeros, Estado, Llamado)")
+    st.stop()
+
+df = pd.DataFrame(data)
 
 # PARCHE DE TIPOS: Forzamos a que todo sea tratado como texto (string)
 df['Numeros'] = df['Numeros'].astype(str)
@@ -61,12 +65,12 @@ st.divider()
 
 # INTERFAZ PRINCIPAL
 if not df_pendientes.empty:
-    # Tomamos SIEMPRE el primer número disponible de la lista de pendientes
+    # Tomamos SIEMPRE el primer número disponible
     fila_actual = df_pendientes.iloc[0]
     numero_actual = fila_actual['Numeros']
     estado_actual = fila_actual['Estado']
     
-    # Obtenemos el índice real/original (sumamos 2 porque en Google Sheets las filas empiezan en 1 y la fila 1 son los encabezados)
+    # Índice real en Google Sheets (las filas en Sheets empiezan en 1 y la fila 1 contiene los encabezados, por eso sumamos 2)
     idx_original_gsheet = int(df_pendientes.index[0]) + 2
     
     # Cartel visual si es una Revisita
@@ -79,7 +83,7 @@ if not df_pendientes.empty:
 
     st.divider()
 
-    # BOTONES DE ACCIÓN (Escriben directamente en la celda exacta de Google Sheets)
+    # BOTONES DE ACCIÓN (Escriben directo en la celda exacta de Google Sheets)
     if st.button("✅ Siguiente Número (Llamado Hecho)"):
         # Columna C es 'Llamado' (columna 3)
         worksheet.update_cell(idx_original_gsheet, 3, "Sí")
@@ -103,7 +107,7 @@ else:
     st.balloons()
     st.success("¡Excelente trabajo! Se completaron todos los números de la lista.")
     if st.button("🔄 Reiniciar lista para una nueva vuelta"):
-        # Borramos las columnas de control para arrancar de cero de forma masiva
+        # Resetea las columnas completas de forma segura
         for i in range(2, total_numeros + 2):
             worksheet.update_cell(i, 2, "Disponible")
             worksheet.update_cell(i, 3, "No")
