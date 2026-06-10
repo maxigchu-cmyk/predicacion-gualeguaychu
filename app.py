@@ -2,7 +2,6 @@ import streamlit as st
 import gspread
 from google.oauth2.service_account import Credentials
 import pandas as pd
-import json
 
 # CONFIGURACIÓN VISUAL
 st.set_page_config(page_title="Predicación Sincronizada", layout="centered")
@@ -16,13 +15,26 @@ st.markdown("""
 
 st.title("📞 Agenda Compartida")
 
-# CONEXIÓN PROCESANDO EL JSON DE FORMA DIRECTA
+# CONEXIÓN ENSAMBLANDO LA CLAVE DESDE UNA LISTA TOML
 try:
-    # Levantamos el bloque string crudo desde los secrets
-    raw_json_string = st.secrets["service_account_raw"]["json_data"]
+    sec = st.secrets["service_account_raw"]
     
-    # Lo convertimos a un diccionario nativo de Python usando json.loads
-    creds_dict = json.loads(raw_json_string)
+    # Reconstruimos la clave uniendo las líneas de texto puro con saltos de línea de sistema
+    pkey_ensamblada = "\n".join(sec["key_lines"]).strip()
+    
+    creds_dict = {
+        "type": sec["type"],
+        "project_id": sec["project_id"],
+        "private_key_id": sec["private_key_id"],
+        "private_key": pkey_ensamblada,
+        "client_email": sec["client_email"],
+        "client_id": sec["client_id"],
+        "auth_uri": sec["auth_uri"],
+        "token_uri": sec["token_uri"],
+        "auth_provider_x509_cert_url": sec["auth_provider_x509_cert_url"],
+        "client_x509_cert_url": sec["client_x509_cert_url"],
+        "universe_domain": sec.get("universe_domain", "googleapis.com")
+    }
     
     # Definimos alcances requeridos por Google API
     scopes = [
