@@ -20,14 +20,10 @@ conn = st.connection("gsheets", type=GSheetsConnection)
 # LEER DATOS (ttl="0" para actualizar en tiempo real)
 df = conn.read(ttl="0")
 
-# Aseguramos que la columna 'Numeros' sea tratada como texto para evitar errores de formato
+# PARCHE DE TIPOS: Forzamos a que todo sea tratado como texto (string)
 df['Numeros'] = df['Numeros'].astype(str)
-
-# Inicializamos las columnas de control si no existen en la planilla
-if 'Estado' not in df.columns:
-    df['Estado'] = 'Disponible'
-if 'Llamado' not in df.columns:
-    df['Llamado'] = 'No'
+df['Estado'] = df['Estado'].astype(str).fillna('Disponible').replace('nan', 'Disponible')
+df['Llamado'] = df['Llamado'].astype(str).fillna('No').replace('nan', 'No')
 
 # FILTRADO: Solo mostramos los números que NO han sido llamados y que NO están inexistentes
 df_pendientes = df[(df['Llamado'] != 'Sí') & (df['Estado'] != 'Inexistente')]
@@ -78,7 +74,6 @@ if not df_pendientes.empty:
 
     if st.button("⭐ Marcar como Revisita para volver a llamar"):
         df.at[idx_original, 'Estado'] = 'Revisita'
-        # No lo marcamos como llamado 'Sí' para que vuelva a aparecer en la vuelta
         conn.update(data=df)
         st.success(f"Número {numero_actual} guardado como Revisita.")
         st.rerun()
