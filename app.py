@@ -1,5 +1,6 @@
 import streamlit as st
 from streamlit_gsheets import GSheetsConnection
+import gspread
 import pandas as pd
 
 # CONFIGURACIÓN VISUAL
@@ -14,16 +15,22 @@ st.markdown("""
 
 st.title("📞 Agenda Compartida")
 
-# CONEXIÓN SEGURA Y CORRECCIÓN DE PERMISOS
+# CONEXIÓN SEGURA OBLIGANDO EL MODO PRIVADO
 try:
+    # 1. Iniciamos la conexión oficial
     conn = st.connection("gsheets", type=GSheetsConnection)
     
-    # Usamos el cliente nativo subyacente para saltar la limitación de update()
-    url_planilla = st.secrets["connections"]["gsheets"]["spreadsheet"]
-    sh = conn.client.open_by_url(url_planilla)
-    worksheet = sh.get_worksheet(0) # Abre la primera pestaña de la planilla
+    # 2. OBLIGAMOS A STREAMLIT a usar las credenciales privadas de los Secrets
+    # Esto transforma el cliente público en un cliente con permisos de edición completos
+    creds = conn._get_google_credentials()
+    gc = gspread.Client(auth=creds)
     
-    # Leemos los datos de forma masiva y rápida
+    # 3. Abrimos la planilla de forma nativa
+    url_planilla = st.secrets["connections"]["gsheets"]["spreadsheet"]
+    sh = gc.open_by_url(url_planilla)
+    worksheet = sh.get_worksheet(0)
+    
+    # 4. Leemos los datos actuales
     data = worksheet.get_all_records()
     df = pd.DataFrame(data)
 except Exception as e:
