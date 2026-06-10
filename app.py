@@ -15,10 +15,18 @@ st.markdown("""
 
 st.title("📞 Agenda Compartida")
 
-# CONEXIÓN DIRECTA ABRIENDO EL ARCHIVO JSON NATIVO
+# CONEXIÓN DIRECTA CORRIGIENDO LAS BARRAS EN MEMORIA
 try:
-    # Python lee directamente el archivo físico del disco sin alterar ningún carácter
-    gc = gspread.service_account(filename="claves.json")
+    # 1. Cargamos el archivo JSON tal cual está en el repositorio
+    with open("claves.json", "r") as f:
+        creds_dict = json.load(f)
+    
+    # 2. PARCHE CLAVE: Reemplazamos la combinación de texto '\\n' por un salto de línea real '\n'
+    if "private_key" in creds_dict:
+        creds_dict["private_key"] = creds_dict["private_key"].replace("\\n", "\n")
+    
+    # 3. Nos autenticamos con el diccionario ya corregido y limpio
+    gc = gspread.service_account_from_dict(creds_dict)
     
     # Buscamos la URL desde tus Secrets de Streamlit
     url_planilla = st.secrets["connections"]["gsheets"]["spreadsheet"]
