@@ -14,48 +14,26 @@ st.markdown("""
 
 st.title("📞 Agenda Compartida")
 
-# DICCIONARIO DE CREDENCIALES DIRECTO EN CÓDIGO
+# TU ARCHIVO JSON NUEVO INTEGRADO
 creds_dict = {
-    "type": "service_account",
-    "project_id": "corded-aquifer-402514",
-    "private_key_id": "493795e6aac15b1df87461888df225497c281379",
-    "private_key": "-----BEGIN PRIVATE KEY-----\n"
-                  "MIIEvwIBADANBgkqhkiG9w0BAQEFAASCBKkwggSlAgEAAoIBAQDhw+mCXHLG+H04\n"
-                  "7Rw1+Ae5qgPKxdOE/k/vxaQv7ZV7Gx+ZBLm1mxk3VNJyQrjeu/QIjBfuGsK8MwG+\n"
-                  "ukyOURheJaX6Fv8Vc6mgI0RbM8Tngmpoa91g8t0n2yoLJG3G3lKXvXUbUaJosoxX\n"
-                  "ZaKSh3AXUYY7bgOZFRvcxTMgxN8bGQ8Ty7NY1Im6aJW9zK48xK6NX7s5vgfGfX1x\n"
-                  "R8/prVjaLdqv2wJpA72tXs46/9iyPjMfCF0hP2woyO4QOzZax7SiKD/b9dstpGXi\n"
-                  "lFZbAT9cXpgqzdLZA07H5+fCRRnOAumTYvgRmxZu6ORI+xo5+R88uWjgUMMcQhsO\n"
-                  "gL7F7gCNAgMBAAECggEAClx7KkYzZ1HOr27kYU6zjhARMfxvx3YDdangreltt5No\n"
-                  "WRW4Ly9B0kIEkYVh5ikCm2TQkVctkkUWAqqaqlpq76EzM53cEaA4C/cqYzQmSIi5\n"
-                  "+PZgV9t1jmd2z8GZfyvDZx7lEb6moT72hWlO84IfQRa2/iG/rQYku/ZZ8RpP8faX\n"
-                  "mPsYGkr6tGRBZoIsZFcUYQtLEYwHJG/f1td7bOwU1phQ3SX/EyKM4Wg+F8Zc8Xth\n"
-                  "tEX0nszBrI+CbJmXlNo2qpocqV12sRsWXwceCrIXtjrYbQwDb4ydR/DaePcSDibu\n"
-                  "mq1Fn4jSVMOJqbALALqqp/ewirh8pxGLCqnlztymuQKBgQD/TO+cyqMFR2nmaAUb\n"
-                  "qSZ0oP0P+BfHPh3vYu08xo/ZNqQ5wTJO9VQ8Qx0jdVdlDMGVmDdk7RxlgJzeEe2W\n"
-                  "0mRwbbU/H5T1mBNKkscWRKn9GzuAougJ0FrzX/zXOsv7tCnP4S0W/QZMgyGscSVG\n"
-                  "2rNcaElwiSykLdrlu3szGVjh5QKBgQDiYkK04EdDmo4DK69H+TmEtNAdg3n6GrQB\n"
-                  "qhAT5pPj+Pp4p8V4u9RxhhQA8q/RF8mrc2WWMe8xsoThMWQkOrfIURDzdcmaURcv\n"
-                  "AXSvEeHaSD060c1xvqA+P/egTR/KDcNVAs1bCw2eZkSC6k8C0i658gGTvnHyU7w/\n"
-                  "oHAA8DrZiQKBgQCHmF1LcXTUQPHGJklQP67lEvxVlvdKI3vSwUAvn2aXf6YJ5srJ\n"
-                  "lROATkUTqCcazIOk6IvDVwxV/NFUQUFncadW723scOG072iPmxWShjWi8OvRjrSf\n"
-                  "QcKMsNahmeDtduseNgK0yv6ldKBV7mJWF6Jb2ifnVXQYXyJ8Ee+FXFkQ4QKBgQDO\n"
-                  "3tv2TbzRmjqLyy+xpZ1aF6DWV37vfddgbfejN+GNQcgg2a8qVPodg1hkRWFEwWgY\n"
-                  "tKrwRVE/KNMkte287atj8jB7SfegfNmiqsHl+YFZ5wmM5ovGlVv5hprScafLDCij\n"
-                  "Vpwxxjf7t5iTyXnKKido5C1sxWt69engesvfD6e3gQKBgQCNFBL5gQWKz5fCFe2/\n"
-                  "fh+KGkTdaC183RzmSw9jlHJZyZM9sn9tgL11W9BErzXe441WHW0pu7vfksMi4S27\n"
-                  "NlwIpETCoTP7fwv7HB4d0cAdaZ0fJuKclVm9Wxg/1ipwM6DI2qIuJOYuF1/Rd9wW\n"
-                  "2Hs93Oil8aHJzXq3TLVhnig15A==\n"
-                  "-----END PRIVATE KEY-----\n",
-    "client_email": "robot-agenda@corded-aquifer-402514.iam.gserviceaccount.com",
-    "client_id": "100877979570026245847",
-    "auth_uri": "https://accounts.google.com/o/oauth2/auth",
-    "token_uri": "https://oauth2.googleapis.com/token",
-    "auth_provider_x509_cert_url": "https://www.googleapis.com/oauth2/v1/certs",
-    "client_x509_cert_url": "https://www.googleapis.com/robot/v1/metadata/x509/robot-agenda%40corded-aquifer-402514.iam.gserviceaccount.com"
+  "type": "service_account",
+  "project_id": "corded-aquifer-402514",
+  "private_key_id": "b2a53e05a0d7afdfb7abf0a9a37ad4123f137c38",
+  "private_key": "-----BEGIN PRIVATE KEY-----\nMIIEvQIBADANBgkqhkiG9w0BAQEFAASCBKcwggSjAgEAAoIBAQDGXB1iz5RFMUgN\nnpuD3EYDTVuOJy/VH6dS9ityTuZ7ICjcKXchMHfHAsaAFV8y2KYOJYfaSKZSn4P9\nBQ0NYduibUZi9X4C7uEKcUf+luP3XBK7Eucyn5XcBrUv3sbpjgY7+b0bQgPLI0B2\nOpGPBas/J0WqF6KcRwTK5RJqkBtRnKX4aKtCmXVXioMNZZPdnKPrUH/pjZLHedXX\ngUETqfq53nTVYlyFy6R1WcEtMpZ1+e5x8DuZyAEmr2Si0/9JvGMcAdRlieiK8wdC\nj/OKaRUousXyt4j09se3Dp1kS8lbxEueEeGl1MnQNebZb3D0DGKdGfPqh8RNn3lX\ngHUbiGZHAgMBAAECggEABM2HLUokZ2vS4vgzq2+Ccc2w3qdxP4z60rCWNbgrrtCF\nB2uo8EX0UykXNakO0ImGtRyl25xbC/DD09+y71+EChHw8drK2HcAk5hRlhxWMbo/\nfoXDJlUkiPAlTp7rcbftdmH3eQ5R+YcFe7ddqI5fv/GLUhvXZUb3mpK4WESGp3pY\nw+ejm+ZwOuoeS2DlKm5K0DpDuajnCTI/gMlRVnrpRGBRHCo12na6dx9OtjaC3lYs\nI1xQv7CGwntamvorYyLKb20+dec+qnnp6J3B/ZDGMZ1DFXIImUnBJLQpw6yxGr0M\nxH99UnTm9X3WsMxro7+PsCCx4kGjDCXSEhEvRbj7aQKBgQDpBaooQ49HvfmysLe2\nDs6yyYhDnmwqD/Sx8Mhb++AymXfVzLBZBHz2dyvs+6p3oMZFns38MiD39njlTqd6\ntu0almpr8eTy1tWCAmPk8jOXNiUcO6iTku5b2fvUodHp4P1ZW+Vvi4tsNjYLECfZ\nZbNyzAhX+h7mtBpo+bLuxugNTwKBgQDZ63IzlwCxSzY4vdJRv/E01SOU2P9dPyaY\n1NEgtY2lt6ipAyiWJpMDab2SV3YlawPGsSDHMCpIuSKBbSmHPWlrmjZjPRUgBDOd\nM/cLLnFiIvaP3oLPveD84H4SfFUgPKsCP8QYhVFyFJZZCPWRISZl0v8pgw2V+mQy\n0/YEV6aJiQKBgApts3jL1Ty7ttIVcJNYRE3iERQdoe+b+TKBeSYMtrLtBVzvJTFG\nryUEnlWjybRC4Ly657MSt0EBqdVxWLN4PlJDSw37rGhlzvZbjwbvA/oPdUe3L8sy\n9zHrJocUmuVhqVT3dOQyFZJJNs/18CKdl5NaqEDvs7RVeR0bl7Nx+W6nAoGBAJDR\n4F4ajtJD+m+w7nF3jnOe5XuIzgQI8LyGSchj/xNPP126hKFsVyzge6QiTZjGSocj\ntXXKM3+K0TyT8BI5JLLmlBhVQpG5WReyrg2XOrCOLa8kn2gxdrB2/DGKwQOgbcEb\n4VSuXJbkyZm304I0NpFarEnJFyFBeo8wv4DZQwqJAoGAG7QGb72sin+EJhzpFYRf\nc7zgG2x55apj7k6RX93MkX7w542/iCqFDC+v8WmgKKxbNjSULTy9j4GJ55X8KstR\nVow6GssGhovluazTfqQndAQQ+ecZ7aYYp2i+dX6lfBbew3bfsswCTtO8wkxAemRp\nc874rWBv1HzFRmzx74DBeQ=\n-----END PRIVATE KEY-----\n",
+  "client_email": "robot-agenda@corded-aquifer-402514.iam.gserviceaccount.com",
+  "client_id": "100877979570026245847",
+  "auth_uri": "https://accounts.google.com/o/oauth2/auth",
+  "token_uri": "https://oauth2.googleapis.com/token",
+  "auth_provider_x509_cert_url": "https://www.googleapis.com/oauth2/v1/certs",
+  "client_x509_cert_url": "https://www.googleapis.com/robot/v1/metadata/x509/robot-agenda%40corded-aquifer-402514.iam.gserviceaccount.com",
+  "universe_domain": "googleapis.com"
 }
 
-# CONEXIÓN
+# PARCHE AUTOMÁTICO DE SEGURIDAD
+# Reemplaza los caracteres '\n' de texto por saltos de línea verdaderos que Google exige
+creds_dict["private_key"] = creds_dict["private_key"].replace("\\n", "\n")
+
+# CONEXIÓN DIRECTA CON GOOGLE SHEETS
 try:
     gc = gspread.service_account_from_dict(creds_dict)
     url_planilla = st.secrets["connections"]["gsheets"]["spreadsheet"]
@@ -87,10 +65,10 @@ if 'Llamado' not in df.columns:
 else:
     df['Llamado'] = df['Llamado'].astype(str).fillna('No').replace('', 'No')
 
-# FILTRADO
+# FILTRADO: Solo pendientes
 df_pendientes = df[(df['Llamado'] != 'Sí') & (df['Estado'] != 'Inexistente')]
 
-# MÉTRICAS
+# MÉTRICAS DE PROGRESO
 total_numeros = len(df)
 quedan_pendientes = len(df_pendientes)
 llamados_ok = total_numeros - quedan_pendientes
@@ -116,7 +94,7 @@ if not df_pendientes.empty:
 
     st.divider()
 
-    # BOTONES DE ACCIÓN
+    # BOTONES DE ACCIÓN (Escriben directo en las celdas)
     if st.button("✅ Siguiente Número (Llamado Hecho)"):
         worksheet.update_cell(idx_original_gsheet, 3, "Sí")
         st.toast("Progreso guardado en la nube.")
