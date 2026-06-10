@@ -2,6 +2,7 @@ import streamlit as st
 import gspread
 from google.oauth2.service_account import Credentials
 import pandas as pd
+import base64
 
 # CONFIGURACIÓN VISUAL
 st.set_page_config(page_title="Predicación Sincronizada", layout="centered")
@@ -15,18 +16,20 @@ st.markdown("""
 
 st.title("📞 Agenda Compartida")
 
-# CONEXIÓN NATIVA CON PARCHE ANTIESPACIOS
+# CONEXIÓN SEGURO DECODIFICANDO BASE64 EN MEMORIA
 try:
     sec = st.secrets["connections"]["gsheets"]["service_account"]
     
-    # Limpiamos la clave de cualquier barra de texto que haya quedado atrapada
-    pkey = sec["private_key"].replace("\\n", "\n").strip()
+    # Decodificamos el texto de base64 para recuperar la clave RSA perfecta sin alteraciones
+    b64_key = sec["private_key_base64"]
+    decoded_bytes = base64.b64decode(b64_key)
+    pkey_limpia = decoded_bytes.decode("utf-8")
     
     creds_dict = {
         "type": sec["type"],
         "project_id": sec["project_id"],
         "private_key_id": sec["private_key_id"],
-        "private_key": pkey,
+        "private_key": pkey_limpia,
         "client_email": sec["client_email"],
         "client_id": sec["client_id"],
         "auth_uri": sec["auth_uri"],
