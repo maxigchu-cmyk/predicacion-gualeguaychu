@@ -18,7 +18,7 @@ st.title("📞 Agenda Compartida")
 conn = st.connection("gsheets", type=GSheetsConnection)
 
 # LEER DATOS (ttl="0" para actualizar en tiempo real)
-df = conn.read(worksheet="Hoja 1", ttl="0")
+df = conn.read(ttl="0")
 
 # Aseguramos que la columna 'Numeros' sea tratada como texto para evitar errores de formato
 df['Numeros'] = df['Numeros'].astype(str)
