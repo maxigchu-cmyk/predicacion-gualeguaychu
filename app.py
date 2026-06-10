@@ -1,7 +1,6 @@
 import streamlit as st
-import gspread
+from streamlit_gsheets import GSheetsConnection
 import pandas as pd
-import json
 
 # CONFIGURACIÓN VISUAL
 st.set_page_config(page_title="Predicación Sincronizada", layout="centered")
@@ -15,50 +14,21 @@ st.markdown("""
 
 st.title("📞 Agenda Compartida")
 
-# CONEXIÓN DIRECTA CORRIGIENDO LAS BARRAS EN MEMORIA
+# CONEXIÓN OFICIAL DE STREAMLIT CON GOOGLE SHEETS
 try:
-    # 1. Cargamos el archivo JSON tal cual está en el repositorio
-    with open("claves.json", "r") as f:
-        creds_dict = json.load(f)
-    
-    # 2. PARCHE CLAVE: Reemplazamos la combinación de texto '\\n' por un salto de línea real '\n'
-    if "private_key" in creds_dict:
-        creds_dict["private_key"] = creds_dict["private_key"].replace("\\n", "\n")
-    
-    # 3. Nos autenticamos con el diccionario ya corregido y limpio
-    gc = gspread.service_account_from_dict(creds_dict)
-    
-    # Buscamos la URL desde tus Secrets de Streamlit
-    url_planilla = st.secrets["connections"]["gsheets"]["spreadsheet"]
-    spreadsheet = gc.open_by_url(url_planilla)
-    worksheet = spreadsheet.get_worksheet(0)
+    conn = st.connection("gsheets", type=GSheetsConnection)
+    # Leemos la planilla (usa automáticamente los Secrets de Streamlit)
+    df = conn.read(ttl="0")
 except Exception as e:
     st.error(f"Error de conexión técnica: {e}")
     st.stop()
 
-# LEER DATOS REALES
-data = worksheet.get_all_records()
-
-if not data:
-    st.warning("La planilla está vacía o no tiene columnas (Numeros, Estado, Llamado)")
-    st.stop()
-
-df = pd.DataFrame(data)
-
-# PARCHE DE TIPOS
+# PARCHE DE TIPOS Y LIMPIEZA
 df['Numeros'] = df['Numeros'].astype(str)
+df['Estado'] = df['Estado'].astype(str).fillna('Disponible').replace(['nan', ''], 'Disponible')
+df['Llamado'] = df['Llamado'].astype(str).fillna('No').replace(['nan', ''], 'No')
 
-if 'Estado' not in df.columns:
-    df['Estado'] = 'Disponible'
-else:
-    df['Estado'] = df['Estado'].astype(str).fillna('Disponible').replace('', 'Disponible')
-
-if 'Llamado' not in df.columns:
-    df['Llamado'] = 'No'
-else:
-    df['Llamado'] = df['Llamado'].astype(str).fillna('No').replace('', 'No')
-
-# FILTRADO: Solo pendientes
+# FILTRADO: Solo mostramos los números pendientes
 df_pendientes = df[(df['Llamado'] != 'Sí') & (df['Estado'] != 'Inexistente')]
 
 # MÉTRICAS DE PROGRESO
@@ -77,7 +47,8 @@ if not df_pendientes.empty:
     numero_actual = fila_actual['Numeros']
     estado_actual = fila_actual['Estado']
     
-    idx_original_gsheet = int(df_pendientes.index[0]) + 2
+    # Obtenemos el índice original
+    idx_original = df_pendientes.index[0]
     
     if estado_actual == 'Revisita':
         st.warning("⭐ ESTE NÚMERO ES UNA REVISITA")
@@ -87,20 +58,23 @@ if not df_pendientes.empty:
 
     st.divider()
 
-    # BOTONES DE ACCIÓN (Escriben directo en las celdas de Google Sheets)
+    # BOTONES DE ACCIÓN
     if st.button("✅ Siguiente Número (Llamado Hecho)"):
-        worksheet.update_cell(idx_original_gsheet, 3, "Sí")
+        df.at[idx_original, 'Llamado'] = 'Sí'
+        conn.update(data=df)
         st.toast("Progreso guardado en la nube.")
         st.rerun()
 
     if st.button("🚫 No existe / Fuera de servicio"):
-        worksheet.update_cell(idx_original_gsheet, 2, "Inexistente")
-        worksheet.update_cell(idx_original_gsheet, 3, "Sí")
+        df.at[idx_original, 'Estado'] = 'Inexistente'
+        df.at[idx_original, 'Llamado'] = 'Sí'
+        conn.update(data=df)
         st.error(f"Número {numero_actual} marcado como Inexistente.")
         st.rerun()
 
     if st.button("⭐ Marcar como Revisita para volver a llamar"):
-        worksheet.update_cell(idx_original_gsheet, 2, "Revisita")
+        df.at[idx_original, 'Estado'] = 'Revisita'
+        conn.update(data=df)
         st.success(f"Número {numero_actual} guardado como Revisita.")
         st.rerun()
 
@@ -108,7 +82,7 @@ else:
     st.balloons()
     st.success("¡Excelente trabajo! Se completaron todos los números de la lista.")
     if st.button("🔄 Reiniciar lista para una nueva vuelta"):
-        for i in range(2, total_numeros + 2):
-            worksheet.update_cell(i, 2, "Disponible")
-            worksheet.update_cell(i, 3, "No")
+        df['Llamado'] = 'No'
+        df['Estado'] = 'Disponible'
+        conn.update(data=df)
         st.rerun()
