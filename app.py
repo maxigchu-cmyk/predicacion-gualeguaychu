@@ -1,6 +1,6 @@
 import streamlit as st
-from streamlit_gsheets import GSheetsConnection
 import gspread
+from google.oauth2.service_account import Credentials
 import pandas as pd
 
 # CONFIGURACIÓN VISUAL
@@ -15,26 +15,49 @@ st.markdown("""
 
 st.title("📞 Agenda Compartida")
 
-# CONEXIÓN SEGURA OBLIGANDO EL MODO PRIVADO
+# CONEXIÓN NATIVA USANDO GOOGLE-AUTH DIRECTO
 try:
-    # 1. Iniciamos la conexión oficial
-    conn = st.connection("gsheets", type=GSheetsConnection)
+    # 1. Recuperamos los datos del Service Account desde tus Secrets de Streamlit
+    sec = st.secrets["connections"]["gsheets"]["service_account"]
     
-    # 2. OBLIGAMOS A STREAMLIT a usar las credenciales privadas de los Secrets
-    # Esto transforma el cliente público en un cliente con permisos de edición completos
-    creds = conn._get_google_credentials()
-    gc = gspread.Client(auth=creds)
+    # 2. Armamos el diccionario limpio mapeando los datos del TOML
+    creds_dict = {
+        "type": sec["type"],
+        "project_id": sec["project_id"],
+        "private_key_id": sec["private_key_id"],
+        "private_key": sec["private_key"],
+        "client_email": sec["client_email"],
+        "client_id": sec["client_id"],
+        "auth_uri": sec["auth_uri"],
+        "token_uri": sec["token_uri"],
+        "auth_provider_x509_cert_url": sec["auth_provider_x509_cert_url"],
+        "client_x509_cert_url": sec["client_x509_cert_url"],
+        "universe_domain": sec.get("universe_domain", "googleapis.com")
+    }
     
-    # 3. Abrimos la planilla de forma nativa
+    # 3. Definimos los alcances (scopes) oficiales que exige Google para leer y escribir
+    scopes = [
+        "https://www.googleapis.com/auth/spreadsheets",
+        "https://www.googleapis.com/auth/drive"
+    ]
+    
+    # 4. Generamos las credenciales nativas con la librería oficial de Google
+    credentials = Credentials.from_service_account_info(creds_dict, scopes=scopes)
+    
+    # 5. Conectamos gspread de forma directa
+    gc = gspread.authorize(credentials)
+    
+    # 6. Abrimos la planilla usando la URL de tus Secrets
     url_planilla = st.secrets["connections"]["gsheets"]["spreadsheet"]
     sh = gc.open_by_url(url_planilla)
     worksheet = sh.get_worksheet(0)
     
-    # 4. Leemos los datos actuales
+    # 7. Descargamos los datos a un DataFrame
     data = worksheet.get_all_records()
     df = pd.DataFrame(data)
+
 except Exception as e:
-    st.error(f"Error de conexión técnica: {e}")
+    st.error(f"Error de conexión técnica directa: {e}")
     st.stop()
 
 if df.empty:
@@ -65,7 +88,7 @@ if not df_pendientes.empty:
     numero_actual = fila_actual['Numeros']
     estado_actual = fila_actual['Estado']
     
-    # Índice real de la fila en Google Sheets (las filas en Sheets empiezan en 1 y la 1 tiene los encabezados, por ende sumamos 2)
+    # Índice real de la fila en Google Sheets
     idx_original_gsheet = int(df_pendientes.index[0]) + 2
     
     if estado_actual == 'Revisita':
@@ -76,22 +99,19 @@ if not df_pendientes.empty:
 
     st.divider()
 
-    # BOTONES DE ACCIÓN DIRECTA (Escriben celda por celda sin bloquearse)
+    # BOTONES DE ACCIÓN DIRECTA (Modifican las celdas en tiempo real)
     if st.button("✅ Siguiente Número (Llamado Hecho)"):
-        # Columna C es 'Llamado' (columna número 3 en Google Sheets)
         worksheet.update_cell(idx_original_gsheet, 3, "Sí")
         st.toast("Progreso guardado en la nube.")
         st.rerun()
 
     if st.button("🚫 No existe / Fuera de servicio"):
-        # Columna B es 'Estado' (2) y Columna C es 'Llamado' (3)
         worksheet.update_cell(idx_original_gsheet, 2, "Inexistente")
         worksheet.update_cell(idx_original_gsheet, 3, "Sí")
         st.error(f"Número {numero_actual} marcado como Inexistente.")
         st.rerun()
 
     if st.button("⭐ Marcar como Revisita para volver a llamar"):
-        # Columna B es 'Estado' (2)
         worksheet.update_cell(idx_original_gsheet, 2, "Revisita")
         st.success(f"Número {numero_actual} guardado como Revisita.")
         st.rerun()
@@ -100,7 +120,6 @@ else:
     st.balloons()
     st.success("¡Excelente trabajo! Se completaron todos los números de la lista.")
     if st.button("🔄 Reiniciar lista para una nueva vuelta"):
-        # Resetea de forma segura toda la lista fila por fila en segundo plano
         for i in range(2, total_numeros + 2):
             worksheet.update_cell(i, 2, "Disponible")
             worksheet.update_cell(i, 3, "No")
