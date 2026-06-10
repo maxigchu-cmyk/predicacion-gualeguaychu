@@ -2,6 +2,7 @@ import streamlit as st
 import gspread
 from google.oauth2.service_account import Credentials
 import pandas as pd
+import json
 
 # CONFIGURACIÓN VISUAL
 st.set_page_config(page_title="Predicación Sincronizada", layout="centered")
@@ -15,39 +16,25 @@ st.markdown("""
 
 st.title("📞 Agenda Compartida")
 
-# CONEXIÓN NATIVA CON ULTRA-LIMPIEZA DE CARACTERES OCULTOS
+# CONEXIÓN PROCESANDO EL JSON DE FORMA DIRECTA
 try:
-    sec = st.secrets["connections"]["gsheets"]["service_account"]
+    # Levantamos el bloque string crudo desde los secrets
+    raw_json_string = st.secrets["service_account_raw"]["json_data"]
     
-    # FILTRO HIGIÉNICO: Forzamos a que solo queden caracteres ASCII válidos y saltos de línea puros
-    raw_key = sec["private_key"]
-    pkey_limpia = "".join(c for c in raw_key if ord(c) < 128 or c in "\n\r").strip()
+    # Lo convertimos a un diccionario nativo de Python usando json.loads
+    creds_dict = json.loads(raw_json_string)
     
-    # Nos aseguramos de corregir posibles barras dobles que meta el formateador TOML
-    pkey_limpia = pkey_limpia.replace("\\n", "\n")
-    
-    creds_dict = {
-        "type": sec["type"],
-        "project_id": sec["project_id"],
-        "private_key_id": sec["private_key_id"],
-        "private_key": pkey_limpia,
-        "client_email": sec["client_email"],
-        "client_id": sec["client_id"],
-        "auth_uri": sec["auth_uri"],
-        "token_uri": sec["token_uri"],
-        "auth_provider_x509_cert_url": sec["auth_provider_x509_cert_url"],
-        "client_x509_cert_url": sec["client_x509_cert_url"],
-        "universe_domain": sec.get("universe_domain", "googleapis.com")
-    }
-    
+    # Definimos alcances requeridos por Google API
     scopes = [
         "https://www.googleapis.com/auth/spreadsheets",
         "https://www.googleapis.com/auth/drive"
     ]
     
+    # Autenticamos el cliente de gspread
     credentials = Credentials.from_service_account_info(creds_dict, scopes=scopes)
     gc = gspread.authorize(credentials)
     
+    # Abrimos la planilla de forma segura
     url_planilla = st.secrets["connections"]["gsheets"]["spreadsheet"]
     sh = gc.open_by_url(url_planilla)
     worksheet = sh.get_worksheet(0)
